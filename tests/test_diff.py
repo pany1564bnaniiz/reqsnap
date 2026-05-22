@@ -59,6 +59,10 @@ class TestDiffSnapshots:
         assert len(changed) == 1
         assert changed[0]["status"] == DIFF_CHANGED
 
+    def test_diffs_is_a_list(self):
+        result = diff_snapshots(SNAPSHOT_A, SNAPSHOT_B)
+        assert isinstance(result["diffs"], list)
+
 
 class TestDiffBodies:
     def test_added_key(self):
@@ -89,6 +93,24 @@ class TestDiffBodies:
         diffs = diff_bodies("same", "same")
         assert diffs == []
 
+    def test_empty_dicts_produce_no_diffs(self):
+        diffs = diff_bodies({}, {})
+        assert diffs == []
+
+    def test_added_key_has_none_left_value(self):
+        diffs = diff_bodies({}, {"new_key": 42})
+        added = [d for d in diffs if d["status"] == DIFF_ADDED]
+        assert len(added) == 1
+        assert added[0]["left"] is None
+        assert added[0]["right"] == 42
+
+    def test_removed_key_has_none_right_value(self):
+        diffs = diff_bodies({"old_key": 99}, {})
+        removed = [d for d in diffs if d["status"] == DIFF_REMOVED]
+        assert len(removed) == 1
+        assert removed[0]["left"] == 99
+        assert removed[0]["right"] is None
+
 
 class TestDiffToJson:
     def test_output_is_valid_json(self):
@@ -97,7 +119,7 @@ class TestDiffToJson:
         parsed = json.loads(output)
         assert isinstance(parsed, dict)
 
-    def test_json_contains_has_diff(self):
+    def test_output_contains_has_diff(self):
         result = diff_snapshots(SNAPSHOT_A, SNAPSHOT_B)
         output = diff_to_json(result)
         parsed = json.loads(output)
