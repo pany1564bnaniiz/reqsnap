@@ -80,6 +80,28 @@ def diff_bodies(body_a: Optional[Any], body_b: Optional[Any]) -> List[Dict]:
     return results
 
 
+def filter_diffs(diff_report: Dict, statuses: Optional[List[str]] = None) -> Dict:
+    """Return a copy of the diff report containing only entries matching the given statuses.
+
+    Args:
+        diff_report: A diff report as returned by ``diff_snapshots``.
+        statuses: A list of status strings to keep (e.g., ``[DIFF_CHANGED, DIFF_ADDED]``).
+                  If ``None`` or empty, all entries are returned unchanged.
+
+    Returns:
+        A new diff report dict with the ``diffs`` list filtered to matching statuses
+        and ``has_diff`` recalculated accordingly.
+    """
+    if not statuses:
+        return diff_report
+
+    filtered = [d for d in diff_report.get("diffs", []) if d["status"] in statuses]
+    return {
+        **diff_report,
+        "diffs": filtered,
+        "has_diff": any(d["status"] != DIFF_UNCHANGED for d in filtered),
+    }
+
+
 def diff_to_json(diff_report: Dict, indent: int = 2) -> str:
-    """Serialize a diff report to a JSON string."""
-    return json.dumps(diff_report, indent=indent, default=str)
+    """Serialize a diff report to a JS
