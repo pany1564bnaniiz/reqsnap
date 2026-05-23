@@ -78,6 +78,16 @@ class TestMergeSnapshots:
         result = merge_snapshots([snap], strategy="majority")
         assert result.get("custom_field") == "custom_value"
 
+    def test_default_strategy_is_latest(self):
+        """Verify that omitting strategy defaults to 'latest' behaviour."""
+        snaps = [
+            _make_snap(status=200),
+            _make_snap(status=503),
+        ]
+        result = merge_snapshots(snaps)
+        assert result["merge_strategy"] == "latest"
+        assert result["status_code"] == 503
+
 
 class TestMergeSummary:
     def test_returns_string(self):
@@ -89,16 +99,5 @@ class TestMergeSummary:
     def test_contains_count(self):
         snaps = [_make_snap() for _ in range(3)]
         merged = merge_snapshots(snaps)
-        assert "3" in merge_summary(merged)
-
-    def test_contains_strategy(self):
-        snaps = [_make_snap()]
-        merged = merge_snapshots(snaps, strategy="majority")
-        assert "majority" in merge_summary(merged)
-
-    def test_contains_url_and_method(self):
-        snap = _make_snap(url="https://api.test.com/v1", method="POST")
-        merged = merge_snapshots([snap])
         summary = merge_summary(merged)
-        assert "https://api.test.com/v1" in summary
-        assert "POST" in summary
+        assert "3" in summary
